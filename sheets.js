@@ -264,7 +264,7 @@
       pix.className = 'price__pix';
       var pl = document.createElement('span'); pl.className = 'label'; pl.textContent = 'No Pix';
       var pv = document.createElement('span'); pv.className = 'val'; pv.textContent = formatBRL(item.preco_pix);
-      var pn = document.createElement('span'); pn.className = 'note'; pn.textContent = item.nota_pix || '10% de desconto';
+      var pn = document.createElement('span'); pn.className = 'note'; pn.textContent = (item.nota_pix || '10% de desconto').replace(/ de R\$/g, ' por R$');
       pix.appendChild(pl); pix.appendChild(pv); pix.appendChild(pn);
       priceDiv.appendChild(pix);
     }
@@ -278,7 +278,7 @@
       var priceOnly = rawCard.replace(/\s*\([^)]*\)/g, '').trim();
       var cv = document.createElement('span'); cv.className = 'val'; cv.textContent = formatBRL(priceOnly);
       var cn = document.createElement('span'); cn.className = 'note';
-      cn.textContent = parenM ? parenM[1] : (item.nota_cartao || 'em até 3x sem juros');
+      cn.textContent = (parenM ? parenM[1] : (item.nota_cartao || 'em até 3x sem juros')).replace(/ de R\$/g, ' por R$');
       card.appendChild(cl); card.appendChild(cv); card.appendChild(cn);
       priceDiv.appendChild(card);
     }
