@@ -170,25 +170,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   <script>
   (function(){
-    function patchNote(n){
-      if(n.textContent.indexOf(' de R$')!==-1)
-        n.textContent=n.textContent.replace(/ de R\$/g,' por R$');
+    function patch(){
+      document.querySelectorAll('.note').forEach(function(n){
+        if(n.textContent.indexOf(' de R$')!==-1)
+          n.textContent=n.textContent.replace(/ de R\$/g,' por R$');
+      });
     }
-    function watchBody(){
-      if(!document.body)return;
-      new MutationObserver(function(ms){
-        ms.forEach(function(m){
-          m.addedNodes.forEach(function(nd){
-            if(nd.nodeType!==1)return;
-            if(nd.classList&&nd.classList.contains('note'))patchNote(nd);
-            nd.querySelectorAll&&nd.querySelectorAll('.note').forEach(patchNote);
-          });
-        });
-      }).observe(document.body,{childList:true,subtree:true});
-    }
-    new MutationObserver(function(ms,ob){
-      if(document.body){ob.disconnect();watchBody();}
-    }).observe(document,{childList:true});
+    var t=setInterval(function(){
+      if(document.querySelectorAll('.note').length){patch();clearInterval(t);}
+    },300);
+    setTimeout(function(){clearInterval(t);},30000);
   })();
   </script>
 
