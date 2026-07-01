@@ -287,7 +287,8 @@
 
     // — Botão WhatsApp —
     var waText = 'Olá Jéssica! Tenho interesse na peça ' + (item.nome || '');
-    var waHref = item.whatsapp_link || ('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(waText));
+    var waDefault = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(waText);
+    var waHref = (item.whatsapp_link && /^https?:\/\//i.test(item.whatsapp_link)) ? item.whatsapp_link : waDefault;
     var btn = document.createElement('a');
     btn.className = 'btn btn--solid';
     btn.setAttribute('href', waHref);
