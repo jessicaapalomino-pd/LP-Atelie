@@ -24,7 +24,10 @@
     '.slider__btn--next{right:8px;}',
     '.slider__dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;}',
     '.slider__dot{width:6px;height:6px;border-radius:50%;background:rgba(250,245,236,.45);border:none;cursor:pointer;padding:0;transition:background .25s,transform .25s;}',
-    '.slider__dot.active{background:#faf5ec;transform:scale(1.3);}'
+    '.slider__dot.active{background:#faf5ec;transform:scale(1.3);}',
+    // ── Badge "Valor especial" ──
+    '.card__media{position:relative;}',
+    '.card__badge{position:absolute;top:10px;left:10px;background:#B8631A;color:#FAF5EC;font-size:10.5px;font-weight:700;letter-spacing:.09em;padding:5px 11px;border-radius:4px;z-index:5;text-transform:uppercase;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.28);}'
   ].join('');
   document.head.appendChild(style);
 
@@ -226,6 +229,14 @@
       media.appendChild(ph);
     }
 
+    // — Badge "Valor especial" —
+    if ((item.valor_especial || '').toLowerCase().trim() === 'sim') {
+      var badge = document.createElement('span');
+      badge.className = 'card__badge';
+      badge.textContent = 'Valor especial';
+      media.appendChild(badge);
+    }
+
     article.appendChild(media);
 
     // — Corpo —
@@ -395,9 +406,36 @@
     }
   }
 
+  // ─── Selo de site seguro ────────────────────────────────────────────────────
+  function injectSiteSeguro() {
+    if (document.getElementById('jp-site-seguro')) return;
+    var footer = document.querySelector('footer');
+    if (!footer) return;
+
+    var badge = document.createElement('div');
+    badge.id = 'jp-site-seguro';
+    badge.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0 0;margin-top:20px;border-top:1px solid rgba(34,30,26,.10);';
+
+    var svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+    badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:7px;font-size:11.5px;letter-spacing:.06em;color:#7A6E63;">' + svg + 'Site Seguro</span>';
+
+    var container = footer.firstElementChild || footer;
+    container.appendChild(badge);
+  }
+
+  function waitForFooter(tries) {
+    var footer = document.querySelector('footer');
+    if (footer && footer.firstElementChild) {
+      injectSiteSeguro();
+    } else if ((tries || 0) < 40) {
+      setTimeout(function() { waitForFooter((tries || 0) + 1); }, 250);
+    }
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', function() { init(); waitForFooter(); });
   } else {
     init();
+    waitForFooter();
   }
 })();
