@@ -93,14 +93,13 @@
     return urls;
   }
 
-  // ─── Formatar valor em BRL ──────────────────────────────────────────────────
+  // ─── Exibir valor BRL conforme digitado na planilha ─────────────────────────
   function formatBRL(raw) {
     if (!raw) return '';
-    var cleaned = String(raw).replace(/\s*\([^)]*\)/g, '').trim()
-      .replace(/[R$\s]/g, '').replace(/\.(?=\d{3})/g, '').replace(',', '.');
-    var num = parseFloat(cleaned);
-    if (isNaN(num)) return 'R$ ' + raw;
-    return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var s = String(raw).replace(/\s*\([^)]*\)/g, '').trim();
+    if (!s) return '';
+    if (!/^R\$/.test(s)) s = 'R$ ' + s;
+    return s;
   }
 
   // ─── Construir slider com múltiplas imagens ─────────────────────────────────
