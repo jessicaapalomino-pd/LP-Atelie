@@ -160,6 +160,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
       window.Babel.transformScriptTags();
     }
+
+    // Google Analytics 4 (gtag.js) — injected into the rendered document so it
+    // survives the documentElement.replaceWith above (the outer <head> that
+    // held the original tag would otherwise be discarded before load).
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag() { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', 'G-N1D8YH4Q0D');
+    const ga = document.createElement('script');
+    ga.async = true;
+    ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-N1D8YH4Q0D';
+    document.head.appendChild(ga);
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);
