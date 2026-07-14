@@ -187,6 +187,20 @@ document.addEventListener('DOMContentLoaded', async function() {
     ga.async = true;
     ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-2CP7E9X5D5';
     document.head.appendChild(ga);
+
+    const GA_BUTTONS = {
+      'Solicitar orçamento': 'solicitar_orcamento',
+      'Ver disponíveis':     'ver_disponiveis',
+      'Quero esta peça':     'quero_esta_peca',
+      'Quero conversar':     'quero_conversar',
+    };
+    document.addEventListener('click', function(e) {
+      const el = e.target.closest('button, a');
+      if (!el) return;
+      const label = el.textContent.trim();
+      const event_name = GA_BUTTONS[label];
+      if (event_name) gtag('event', event_name, { event_category: 'botao', event_label: label });
+    });
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);
