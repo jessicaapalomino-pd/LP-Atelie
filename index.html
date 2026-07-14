@@ -188,18 +188,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-2CP7E9X5D5';
     document.head.appendChild(ga);
 
-    const GA_BUTTONS = {
-      'Solicitar orçamento': 'solicitar_orcamento',
-      'Ver disponíveis':     'ver_disponiveis',
-      'Quero esta peça':     'quero_esta_peca',
-      'Quero conversar':     'quero_conversar',
-    };
+    const GA_BUTTONS = [
+      { match: 'solicitar orçamento', event_name: 'solicitar_orcamento' },
+      { match: 'ver disponíveis',     event_name: 'ver_disponiveis' },
+      { match: 'quero esta peça',     event_name: 'quero_esta_peca' },
+      { match: 'quero conversar',     event_name: 'quero_conversar' },
+    ];
     document.addEventListener('click', function(e) {
       const el = e.target.closest('button, a');
       if (!el) return;
-      const label = el.textContent.trim();
-      const event_name = GA_BUTTONS[label];
-      if (event_name) gtag('event', event_name, { event_category: 'botao', event_label: label });
+      const label = el.textContent.trim().toLowerCase();
+      const found = GA_BUTTONS.find(function(b) { return label.includes(b.match); });
+      if (found) gtag('event', found.event_name, { event_category: 'botao', event_label: el.textContent.trim() });
     });
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
