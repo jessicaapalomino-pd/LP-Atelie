@@ -205,17 +205,21 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Google Ads — conversion tracking for every WhatsApp link click
     window.gtag_report_conversion = function(url) {
-      var callback = function () {
-        if (typeof(url) != 'undefined') {
-          window.location = url;
-        }
+      var navigated = false;
+      var navigate = function () {
+        if (navigated || typeof(url) == 'undefined') return;
+        navigated = true;
+        window.location = url;
       };
       gtag('event', 'conversion', {
           'send_to': 'AW-18323845240/6cVfCJDLtdAcEPjgvqFE',
           'value': 1.0,
           'currency': 'BRL',
-          'event_callback': callback
+          'event_callback': navigate
       });
+      // Fallback: if gtag never calls back (adblocker, GA failed to load,
+      // slow network), navigate anyway after 1s so the click never gets stuck.
+      setTimeout(navigate, 1000);
       return false;
     };
     document.addEventListener('click', function(e) {
