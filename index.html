@@ -183,6 +183,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.gtag = function gtag() { dataLayer.push(arguments); };
     gtag('js', new Date());
     gtag('config', 'G-2CP7E9X5D5');
+    gtag('config', 'AW-18323845240');
     const ga = document.createElement('script');
     ga.async = true;
     ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-2CP7E9X5D5';
@@ -200,6 +201,28 @@ document.addEventListener('DOMContentLoaded', async function() {
       const label = el.textContent.trim().toLowerCase();
       const found = GA_BUTTONS.find(function(b) { return label.includes(b.match); });
       if (found) gtag('event', found.event_name, { event_category: 'botao', event_label: el.textContent.trim() });
+    });
+
+    // Google Ads — conversion tracking for every WhatsApp link click
+    window.gtag_report_conversion = function(url) {
+      var callback = function () {
+        if (typeof(url) != 'undefined') {
+          window.location = url;
+        }
+      };
+      gtag('event', 'conversion', {
+          'send_to': 'AW-18323845240/6cVfCJDLtdAcEPjgvqFE',
+          'value': 1.0,
+          'currency': 'BRL',
+          'event_callback': callback
+      });
+      return false;
+    };
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('a[href*="wa.me"]');
+      if (!el) return;
+      e.preventDefault();
+      gtag_report_conversion(el.getAttribute('href'));
     });
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
