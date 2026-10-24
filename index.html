@@ -532,12 +532,18 @@
         <p style="max-width:520px;margin:0 auto;font-size:15px;line-height:1.7;font-weight:300;color:#5A5145">envio imediato para todo o Brasil</p>
       </div>
 
+      <sc-if value="{{ tapCarregando }}" hint-placeholder-val="">
+        <p style="text-align:center;font-size:14px;letter-spacing:.08em;color:#6E655B;font-weight:300;margin:0">Carregando peças…</p>
+      </sc-if>
+      <sc-if value="{{ tapErro }}" hint-placeholder-val="">
+        <p style="text-align:center;font-size:15px;line-height:1.7;color:#5A5145;font-weight:300;margin:0 auto;max-width:460px">Não foi possível carregar as peças agora. <a href="https://wa.me/5519991042445?text=Ol%C3%A1%2C%20J%C3%A9ssica!%20Gostaria%20de%20ver%20as%20pe%C3%A7as%20dispon%C3%ADveis%20a%20pronta%20entrega." style="color:#9E4528">Peça a lista pelo WhatsApp</a> ou recarregue a página.</p>
+      </sc-if>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));column-gap:clamp(20px,2.4vw,30px);row-gap:64px">
         <sc-for list="{{ tapecarias }}" as="t">
           <article style="display:flex;flex-direction:column">
             <div style="position:relative">
               <div style="position:relative;overflow:hidden" class="jp-card-media" data-foto1="{{ t.fotoUrl }}" data-foto2="{{ t.fotoUrl2 }}">
-                <img src="{{ t.fotoUrl }}" alt="{{ t.nome }}" style="width:100%;aspect-ratio:3/4;display:block;object-fit:cover;transition:transform .6s ease" style-hover="transform:scale(1.04)" onerror="this.onerror=null;this.style.objectFit='contain';this.style.padding='24px'">
+                <img src="{{ t.fotoUrl }}" alt="{{ t.nome }}" loading="lazy" decoding="async" style="width:100%;aspect-ratio:3/4;display:block;object-fit:cover;transition:transform .6s ease" style-hover="transform:scale(1.04)" onerror="this.onerror=null;this.style.objectFit='contain';this.style.padding='24px'">
               </div>
               <sc-if value="{{ t.tag }}" hint-placeholder-val="">
                 <span style="position:absolute;top:10px;right:10px;background:#3D6B47;color:#FAF5EC;font-size:9.5px;font-weight:400;letter-spacing:.09em;padding:5px 11px;border-radius:4px;z-index:5;text-transform:uppercase;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.28);">Valor especial</span>
@@ -708,7 +714,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;mostrarPrecos&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tapeçarias&quot;}}">
 class Component extends DCLogic {
-  state = { sent: false, menuOpen: false, vw: (typeof window !== 'undefined' ? window.innerWidth : 1200), tapecarias: [], cuidadoAberto: null };
+  state = { sent: false, menuOpen: false, vw: (typeof window !== 'undefined' ? window.innerWidth : 1200), tapecarias: [], tapStatus: 'carregando', cuidadoAberto: null };
   navRef = React.createRef();
 
   componentDidMount() {
@@ -751,7 +757,7 @@ class Component extends DCLogic {
     const _SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFzmlbt8FOoIInbHaOq6kI3RtVz9ch69heHBURGUFk-LmxjK2kNn3B6VYv5q6Sb6GDqaFB_Om6Kfdp/pub?output=csv';
     const _SHEET = _SHEET_BASE;
     const _brl = (v) => { const s = String(v == null ? '' : v).trim(); if (!s) return ''; return s.startsWith('R$') ? s : 'R$ ' + s; };
-    const _driveImg = (url) => { const s = (url || '').trim(); let id = ''; const dIdx = s.indexOf('/d/'); if (dIdx > -1) { id = s.slice(dIdx + 3).split('/')[0].split('?')[0]; } if (!id) { const m = s.indexOf('id='); if (m > -1) { id = s.slice(m + 3).split('&')[0]; } } if (!id && s.indexOf('/') === -1 && s.indexOf(' ') === -1 && s.length > 10) { id = s; } return id ? 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1000' : s; };
+    const _driveImg = (url) => { const s = (url || '').trim(); let id = ''; const dIdx = s.indexOf('/d/'); if (dIdx > -1) { id = s.slice(dIdx + 3).split('/')[0].split('?')[0]; } if (!id) { const m = s.indexOf('id='); if (m > -1) { id = s.slice(m + 3).split('&')[0]; } } if (!id && s.indexOf('/') === -1 && s.indexOf(' ') === -1 && s.length > 10) { id = s; } return id ? 'https://lh3.googleusercontent.com/d/' + id + '=w800' : s; };
     const _NL = String.fromCharCode(10);
     const _parseCSV = (csv) => {
       const lines = csv.trim().replace(String.fromCharCode(13), '').split(_NL);
@@ -768,9 +774,16 @@ class Component extends DCLogic {
         const obj = {}; h.forEach((k, i) => { obj[k] = vals[i] !== undefined ? vals[i] : ''; }); return obj;
       });
     };
+    // Navegadores internos (Instagram, WhatsApp) às vezes falham na primeira tentativa
+    const _buscar = (tentativa) => fetch(_SHEET + '&t=' + Date.now(), { cache: 'no-store' })
+      .then(r => { console.log('[Atelie] Status HTTP:', r.status, r.ok); if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .catch(err => {
+        if (tentativa >= 3) throw err;
+        console.warn('[Atelie] Tentativa', tentativa, 'falhou, tentando de novo:', err.message || err);
+        return new Promise(res => setTimeout(res, 1500 * tentativa)).then(() => _buscar(tentativa + 1));
+      });
     console.log('[Atelie] Iniciando busca:', _SHEET);
-    fetch(_SHEET + '&t=' + Date.now(), { cache: 'no-store' })
-      .then(r => { console.log('[Atelie] Status HTTP:', r.status, r.ok); return r.text(); })
+    _buscar(1)
       .then(csv => {
         const firstLine = csv.split(String.fromCharCode(10))[0];
         console.log('[Atelie] Primeira linha CSV:', firstLine);
@@ -779,7 +792,7 @@ class Component extends DCLogic {
         if (rows.length > 0) console.log('[Atelie] Colunas encontradas:', Object.keys(rows[0]).join(', '));
         const disponiveis = rows.filter(t => (t.disponivel||'').toLowerCase() === 'sim');
         console.log('[Atelie] Disponiveis (sim):', disponiveis.length);
-        this.setState({ tapecarias: disponiveis.map((t, i) => ({
+        this.setState({ tapStatus: 'ok', tapecarias: disponiveis.map((t, i) => ({
           id: 't' + (i + 1),
           nome: t.nome,
           dimCm: t.dimensoes,
@@ -791,7 +804,7 @@ class Component extends DCLogic {
           tag: (t.valor_especial || '').toLowerCase().trim() === 'sim' ? 'Valor especial' : '',
         })) });
       })
-      .catch(err => console.error('[Atelie] ERRO:', err.message || err));
+      .catch(err => { console.error('[Atelie] ERRO:', err.message || err); this.setState({ tapStatus: 'erro' }); });
   }
   componentWillUnmount() {
     if (this._onResize) window.removeEventListener('resize', this._onResize);
@@ -909,6 +922,8 @@ class Component extends DCLogic {
       galeria,
       galleryGrid,
       tapecarias,
+      tapCarregando: this.state.tapStatus === 'carregando',
+      tapErro: this.state.tapStatus === 'erro',
       isMobile,
       showOrcamento: !isMobile,
       tapInfoDir: isMobile ? 'column' : 'row',
