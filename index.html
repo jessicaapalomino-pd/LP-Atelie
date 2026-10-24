@@ -759,12 +759,13 @@ class Component extends DCLogic {
     const _SHEET = _SHEET_BASE;
     const _brl = (v) => { const s = String(v == null ? '' : v).trim(); if (!s) return ''; return s.startsWith('R$') ? s : 'R$ ' + s; };
     const _driveId = (url) => { const s = (url || '').trim(); let id = ''; const dIdx = s.indexOf('/d/'); if (dIdx > -1) { id = s.slice(dIdx + 3).split('/')[0].split('?')[0]; } if (!id) { const m = s.indexOf('id='); if (m > -1) { id = s.slice(m + 3).split('&')[0]; } } if (!id && s.indexOf('/') === -1 && s.indexOf(' ') === -1 && s.length > 10) { id = s; } return id; };
-    // Fotos copiadas para assets/pecas/ por scripts/sync_fotos.py — o Google limita (429) fotos do Drive exibidas em sites
-    const _driveImg = (url) => { const id = _driveId(url); return id ? 'assets/pecas/' + id + '.jpg' : (url || '').trim(); };
-    // Peça nova ainda sem cópia local: tenta o Google (2 endereços); se falhar, fica só o fundo
+    // O Google limita (429) fotos do Drive exibidas direto em sites; a Vercel busca a foto uma vez,
+    // otimiza e guarda em cache (config "images" no vercel.json) — vale para qualquer peça nova da planilha
+    const _driveImg = (url) => { const id = _driveId(url); return id ? '/_vercel/image?url=' + encodeURIComponent('https://lh3.googleusercontent.com/d/' + id + '=w1080') + '&w=828&q=78' : (url || '').trim(); };
+    // Se a Vercel falhar: cópia local (scripts/sync_fotos.py, opcional), depois o Google direto; por fim, só o fundo
     const _fotoErro = (url) => (e) => {
       const img = e.currentTarget; const id = _driveId(url);
-      const alternativas = id ? ['https://lh3.googleusercontent.com/d/' + id + '=w800', 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800'] : [];
+      const alternativas = id ? ['assets/pecas/' + id + '.jpg', 'https://lh3.googleusercontent.com/d/' + id + '=w800', 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800'] : [];
       const n = Number(img.dataset.tentativa || 0);
       if (n < alternativas.length) { img.dataset.tentativa = String(n + 1); img.src = alternativas[n]; }
       else { img.style.visibility = 'hidden'; }

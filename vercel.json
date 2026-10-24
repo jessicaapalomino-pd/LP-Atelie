@@ -1,4 +1,12 @@
 {
+  "images": {
+    "sizes": [640, 828, 1080],
+    "formats": ["image/webp"],
+    "minimumCacheTTL": 2678400,
+    "remotePatterns": [
+      { "protocol": "https", "hostname": "lh3.googleusercontent.com", "pathname": "/d/**" }
+    ]
+  },
   "headers": [
     {
       "source": "/(.*)",
