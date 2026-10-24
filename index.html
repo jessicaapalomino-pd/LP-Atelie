@@ -427,7 +427,7 @@
   <!-- ===================== HERO ===================== -->
   <section style="position:relative;height:100vh;min-height:660px;width:100%;overflow:hidden">
     <div style="position:absolute;inset:0;background:#2a231c">
-      <picture style="width:100%;height:100%;display:block"><source media="(max-width:768px)" srcset="./assets/hero-mobile.png"><img src="./assets/hero.png" alt="Ateliê Jéssica Palomino" style="width:100%;height:100%;display:block;object-fit:cover;object-position:center"></picture>
+      <picture style="width:100%;height:100%;display:block"><source media="(max-width:768px)" srcset="./assets/hero-mobile.jpg"><img src="./assets/hero.jpg" alt="Ateliê Jéssica Palomino" style="width:100%;height:100%;display:block;object-fit:cover;object-position:center"></picture>
     </div>
     
 
@@ -542,8 +542,8 @@
         <sc-for list="{{ tapecarias }}" as="t">
           <article style="display:flex;flex-direction:column">
             <div style="position:relative">
-              <div style="position:relative;overflow:hidden" class="jp-card-media" data-foto1="{{ t.fotoUrl }}" data-foto2="{{ t.fotoUrl2 }}">
-                <img src="{{ t.fotoUrl }}" alt="{{ t.nome }}" loading="lazy" decoding="async" style="width:100%;aspect-ratio:3/4;display:block;object-fit:cover;transition:transform .6s ease" style-hover="transform:scale(1.04)" onerror="this.onerror=null;this.style.objectFit='contain';this.style.padding='24px'">
+              <div style="position:relative;overflow:hidden;background:#EFE9E0" class="jp-card-media" data-foto1="{{ t.fotoUrl }}" data-foto2="{{ t.fotoUrl2 }}">
+                <img src="{{ t.fotoUrl }}" alt="{{ t.nome }}" loading="lazy" decoding="async" style="width:100%;aspect-ratio:3/4;display:block;object-fit:cover;transition:transform .6s ease" style-hover="transform:scale(1.04)" onerror="{{ t.onFotoErro }}">
               </div>
               <sc-if value="{{ t.tag }}" hint-placeholder-val="">
                 <span style="position:absolute;top:10px;right:10px;background:#3D6B47;color:#FAF5EC;font-size:9.5px;font-weight:400;letter-spacing:.09em;padding:5px 11px;border-radius:4px;z-index:5;text-transform:uppercase;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.28);">Valor especial</span>
@@ -751,13 +751,24 @@ class Component extends DCLogic {
             this._revealObs.unobserve(en.target);
           }
         });
-      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+      // threshold 0: seções altas (ex.: 9 peças empilhadas no celular) nunca chegavam a 12% visíveis e ficavam invisíveis
+      }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
       reveals.forEach((el) => this._revealObs.observe(el));
     }
     const _SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFzmlbt8FOoIInbHaOq6kI3RtVz9ch69heHBURGUFk-LmxjK2kNn3B6VYv5q6Sb6GDqaFB_Om6Kfdp/pub?output=csv';
     const _SHEET = _SHEET_BASE;
     const _brl = (v) => { const s = String(v == null ? '' : v).trim(); if (!s) return ''; return s.startsWith('R$') ? s : 'R$ ' + s; };
-    const _driveImg = (url) => { const s = (url || '').trim(); let id = ''; const dIdx = s.indexOf('/d/'); if (dIdx > -1) { id = s.slice(dIdx + 3).split('/')[0].split('?')[0]; } if (!id) { const m = s.indexOf('id='); if (m > -1) { id = s.slice(m + 3).split('&')[0]; } } if (!id && s.indexOf('/') === -1 && s.indexOf(' ') === -1 && s.length > 10) { id = s; } return id ? 'https://lh3.googleusercontent.com/d/' + id + '=w800' : s; };
+    const _driveId = (url) => { const s = (url || '').trim(); let id = ''; const dIdx = s.indexOf('/d/'); if (dIdx > -1) { id = s.slice(dIdx + 3).split('/')[0].split('?')[0]; } if (!id) { const m = s.indexOf('id='); if (m > -1) { id = s.slice(m + 3).split('&')[0]; } } if (!id && s.indexOf('/') === -1 && s.indexOf(' ') === -1 && s.length > 10) { id = s; } return id; };
+    // Fotos copiadas para assets/pecas/ por scripts/sync_fotos.py — o Google limita (429) fotos do Drive exibidas em sites
+    const _driveImg = (url) => { const id = _driveId(url); return id ? 'assets/pecas/' + id + '.jpg' : (url || '').trim(); };
+    // Peça nova ainda sem cópia local: tenta o Google (2 endereços); se falhar, fica só o fundo
+    const _fotoErro = (url) => (e) => {
+      const img = e.currentTarget; const id = _driveId(url);
+      const alternativas = id ? ['https://lh3.googleusercontent.com/d/' + id + '=w800', 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800'] : [];
+      const n = Number(img.dataset.tentativa || 0);
+      if (n < alternativas.length) { img.dataset.tentativa = String(n + 1); img.src = alternativas[n]; }
+      else { img.style.visibility = 'hidden'; }
+    };
     const _NL = String.fromCharCode(10);
     const _parseCSV = (csv) => {
       const lines = csv.trim().replace(String.fromCharCode(13), '').split(_NL);
@@ -800,6 +811,7 @@ class Component extends DCLogic {
           qtdParcela: t.qtd_parcela,
           precoParcela: _brl(t.preco_parcela),
           fotoUrl: _driveImg(t.foto_id),
+          onFotoErro: _fotoErro(t.foto_id),
           fotoUrl2: _driveImg(t.foto_id_2),
           tag: (t.valor_especial || '').toLowerCase().trim() === 'sim' ? 'Valor especial' : '',
         })) });
